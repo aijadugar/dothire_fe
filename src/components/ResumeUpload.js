@@ -1,39 +1,45 @@
 import { useState } from "react";
-import { uploadResume } from "../api";
+import axios from "axios";
 
 const ResumeUpload = () => {
-  const [file, setFile] = useState(null);
-  const [uploading, setUploading] = useState(false);
+    const [file, setFile] = useState(null);
+    const [message, setMessage] = useState("");
 
-  const handleUpload = async () => {
-    if (!file) return alert("Please select a file");
+    const handleFileChange = (event) => {
+        setFile(event.target.files[0]);
+    };
 
-    let formData = new FormData();
-    formData.append("resume", file);
-    setUploading(true);
+    const handleUpload = async () => {
+        if (!file) {
+            setMessage("Please select a resume file to upload.");
+            return;
+        }
 
-    try {
-      await uploadResume(formData);
-      alert("Resume uploaded successfully!");
-    } catch (error) {
-      alert("Upload failed!");
-    }
-    setUploading(false);
-  };
+        const formData = new FormData();
+        formData.append("resume", file);
 
-  return (
-    <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-      <h2 className="text-lg font-semibold mb-4">Upload Resume</h2>
-      <input type="file" onChange={(e) => setFile(e.target.files[0])} className="mb-4" />
-      <button
-        onClick={handleUpload}
-        className={`px-4 py-2 bg-blue-600 text-white rounded-lg ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
-        disabled={uploading}
-      >
-        {uploading ? "Uploading..." : "Upload Resume"}
-      </button>
-    </div>
-  );
+        try {
+            const response = await axios.post("http://127.0.0.1:8000/api/upload-resume/", formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+            });
+
+            setMessage(response.data.message);
+        } catch (error) {
+            setMessage("Error uploading file. Please try again.");
+            console.error("Upload Error:", error);
+        }
+    };
+
+    return (
+        <div style={{ padding: "20px", textAlign: "center" }}>
+            <h2>Upload Resume</h2>
+            <input type="file" onChange={handleFileChange} accept=".pdf,.doc,.docx" />
+            <button onClick={handleUpload} style={{ marginLeft: "10px", padding: "5px 10px", cursor: "pointer" }}>
+                Upload
+            </button>
+            {message && <p>{message}</p>}
+        </div>
+    );
 };
 
 export default ResumeUpload;
